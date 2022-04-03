@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Windows;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
+using System.Drawing;
+using System.Drawing.Imaging;
 using System.IO;
+using System.Runtime.InteropServices;
 
 namespace SkyboxRender;
 
@@ -22,7 +23,7 @@ public class SkyboxRender
 
   public static void Main()
   {
-    // BGRA
+    // ARGB
     var imageData = new double[ImageHeight * 2 * ImageHeight * 4];
 
     using (var dataStream = new BinaryReader(new FileStream(DataPath, FileMode.Open)))
@@ -73,10 +74,10 @@ public class SkyboxRender
 
         void WritePixel(int x, int y, double weight)
         {
-          imageData[x * y + 2] += colorRgb[0] * weight;
-          imageData[x * y + 1] += colorRgb[1] * weight;
-          imageData[x * y + 0] += colorRgb[2] * weight;
-          imageData[x * y + 3] += lightPower * weight;
+          imageData[x * y] += lightPower * weight;
+          imageData[x * y + 1] += colorRgb[0] * weight;
+          imageData[x * y + 2] += colorRgb[1] * weight;
+          imageData[x * y + 3] += colorRgb[2] * weight;
         }
 
         for (var x = boundBox[0, 0]; x < boundBox[0, 1]; x++)
@@ -191,13 +192,15 @@ public class SkyboxRender
       }
     }
 
-    BitmapSource bitmap = BitmapSource.Create(ImageHeight * 2, ImageHeight, 96, 96, PixelFormats.Pbgra32, null, imageData, 0);
-    using (var imageStream = new BinaryWriter(new FileStream(ImagePath, FileMode.OpenOrCreate)))
-    {
-      PngBitmapEncoder encoder = new PngBitmapEncoder();
-      encoder.Frames.Add(BitmapFrame.Create(bitmap));
-      encoder.Save(imageStream);
-    }
+    Bitmap img = new Bitmap(ImageHeight * 2, ImageHeight, PixelFormat.Format32bppArgb);
+    BitmapData bmpData = img.LockBits(
+      new Rectangle(0, 0, ImageHeight * 2, ImageHeight),
+      ImageLockMode.WriteOnly,
+      PixelFormat.Format32bppArgb
+    );
+    Marshal.Copy(imageData, 0, bmpData.Scan0, imageData.Length);
+    img.UnlockBits(bmpData);
+    img.Save(ImagePath, ImageFormat.Png);
   }
 
   // 1軸のみ
