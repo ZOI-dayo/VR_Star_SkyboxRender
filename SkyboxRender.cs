@@ -7,7 +7,7 @@ namespace SkyboxRender;
 public class SkyboxRender
 {
   private const string DataPath = @"F:\out\Compiled";
-  private const string ImagePath = @"F:\out\Compiled";
+  private const string ImagePath = @"F:\out\Compiled.png";
   private const int ImageHeight = 4096;
 
   private const double ZeroMagPower = 0.2d;
@@ -25,8 +25,11 @@ public class SkyboxRender
 
     using (var dataStream = new BinaryReader(new FileStream(DataPath, FileMode.Open)))
     {
+      long count = 0;
       while (dataStream.BaseStream.Position != dataStream.BaseStream.Length)
       {
+        count++;
+        if (count % 10000 == 0) Console.WriteLine(count);
         var ra = dataStream.ReadDouble();
         var dec = dataStream.ReadDouble();
         var vMag = dataStream.ReadSingle();
