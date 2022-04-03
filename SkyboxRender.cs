@@ -29,7 +29,7 @@ public class SkyboxRender
       while (dataStream.BaseStream.Position != dataStream.BaseStream.Length)
       {
         count++;
-        if (count % 10000 == 0) Console.WriteLine(count);
+        if (count % 1000000 == 0) Console.WriteLine(count);
         var ra = dataStream.ReadDouble();
         var dec = dataStream.ReadDouble();
         var vMag = dataStream.ReadSingle();
@@ -44,12 +44,12 @@ public class SkyboxRender
         var boundBox = new[,]
         {
           {
-            (int)Math.Floor((boxSize[0] - centerLoc[0] / 2) / PixelSize),
-            (int)Math.Ceiling((boxSize[0] + centerLoc[0] / 2) / PixelSize) - 1
+            (int)Math.Floor((centerLoc[0] - boxSize[0] / 2) / PixelSize),
+            (int)Math.Ceiling((centerLoc[0] + boxSize[0] / 2) / PixelSize) - 1
           },
           {
-            (int)Math.Floor((boxSize[1] - centerLoc[1] / 2) / PixelSize),
-            (int)Math.Ceiling((boxSize[1] + centerLoc[1] / 2) / PixelSize) - 1
+            (int)Math.Floor((centerLoc[1] - boxSize[1] / 2) / PixelSize),
+            (int)Math.Ceiling((centerLoc[1] + boxSize[1] / 2) / PixelSize) - 1
           }
         };
         // http://www.uenosato.net/hr_diagram/hrdiagram2.html 2-a
@@ -74,10 +74,10 @@ public class SkyboxRender
 
         void WritePixel(int x, int y, double weight)
         {
-          imageData[x * y] += lightPower * weight;
-          imageData[x * y + 1] += colorRgb[0] * weight;
-          imageData[x * y + 2] += colorRgb[1] * weight;
-          imageData[x * y + 3] += colorRgb[2] * weight;
+          imageData[x + ImageHeight * y] += lightPower * weight;
+          imageData[x + ImageHeight * y + 1] += colorRgb[0] * weight;
+          imageData[x + ImageHeight * y + 2] += colorRgb[1] * weight;
+          imageData[x + ImageHeight * y + 3] += colorRgb[2] * weight;
         }
 
         for (var x = boundBox[0, 0]; x < boundBox[0, 1]; x++)
