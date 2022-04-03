@@ -1,8 +1,5 @@
-﻿using System;
-using System.Windows;
-using System.Drawing;
+﻿using System.Drawing;
 using System.Drawing.Imaging;
-using System.IO;
 using System.Runtime.InteropServices;
 
 namespace SkyboxRender;
@@ -192,8 +189,8 @@ public class SkyboxRender
       }
     }
 
-    Bitmap img = new Bitmap(ImageHeight * 2, ImageHeight, PixelFormat.Format32bppArgb);
-    BitmapData bmpData = img.LockBits(
+    var img = new Bitmap(ImageHeight * 2, ImageHeight, PixelFormat.Format32bppArgb);
+    var bmpData = img.LockBits(
       new Rectangle(0, 0, ImageHeight * 2, ImageHeight),
       ImageLockMode.WriteOnly,
       PixelFormat.Format32bppArgb
