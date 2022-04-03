@@ -2,6 +2,8 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SkyboxRender", "SkyboxRender.csproj", "{E8CE05E7-834B-411F-897C-DBE846979747}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConvertToImage", "..\ConvertToImage\ConvertToImage\ConvertToImage.csproj", "{C5F68DAB-40FB-4B7F-9B85-2B222F233DD1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -12,5 +14,9 @@ Global
 		{E8CE05E7-834B-411F-897C-DBE846979747}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E8CE05E7-834B-411F-897C-DBE846979747}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E8CE05E7-834B-411F-897C-DBE846979747}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C5F68DAB-40FB-4B7F-9B85-2B222F233DD1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C5F68DAB-40FB-4B7F-9B85-2B222F233DD1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C5F68DAB-40FB-4B7F-9B85-2B222F233DD1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C5F68DAB-40FB-4B7F-9B85-2B222F233DD1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

@@ -1,13 +1,11 @@
-﻿using System.Drawing;
-using System.Drawing.Imaging;
-using System.Runtime.InteropServices;
+﻿using System.Globalization;
 
 namespace SkyboxRender;
 
 public class SkyboxRender
 {
   private const string DataPath = @"F:\out\Compiled";
-  private const string ImagePath = @"F:\out\Compiled.png";
+  private const string OutFile = @"F:\out\out.bin";
   private const int ImageHeight = 4096;
 
   private const double ZeroMagPower = 0.2d;
@@ -20,187 +18,191 @@ public class SkyboxRender
 
   public static void Main()
   {
-    // ARGB
-    var imageData = new double[ImageHeight * 2 * ImageHeight * 4];
+    // RGB
+    var imageData = new double[ImageHeight * 2 * ImageHeight * 3];
 
-    using (var dataStream = new BinaryReader(new FileStream(DataPath, FileMode.Open)))
+    
+    var nowTime = DateTime.Now;
+    using var logSWriter =
+      new StreamWriter(
+        Path.GetDirectoryName(OutFile)
+        + @"\log_skybox_"
+        + nowTime.ToString($"{nowTime:yyyyMMddHHmmss}")
+        + ".txt");
+    logSWriter.WriteLine($"Begin: {DateTime.Now.ToString(new CultureInfo("ja-JP"))}");
+    using var dataStream = new BinaryReader(new FileStream(DataPath, FileMode.Open));
+    long count = 0;
+    while (dataStream.BaseStream.Position != dataStream.BaseStream.Length)
     {
-      long count = 0;
-      while (dataStream.BaseStream.Position != dataStream.BaseStream.Length)
+      count++;
+      if (count % 1000000 == 0) Console.WriteLine(count);
+      var ra = dataStream.ReadDouble();
+      var dec = dataStream.ReadDouble();
+      var vMag = dataStream.ReadSingle();
+      var bvColor = dataStream.ReadSingle();
+      var lightPower = ZeroMagPower * Math.Pow(100, -vMag / 5);
+      // deg[]
+      var boxSize = new[] { StarDiameter / Math.Sin(dec / 180 * Math.PI), StarDiameter };
+      // deg[]
+      var centerLoc = new[] { ra, -dec + 90 };
+
+      // px[]
+      var boundBox = new[,]
       {
-        count++;
-        if (count % 1000000 == 0) Console.WriteLine(count);
-        var ra = dataStream.ReadDouble();
-        var dec = dataStream.ReadDouble();
-        var vMag = dataStream.ReadSingle();
-        var bvColor = dataStream.ReadSingle();
-        var lightPower = ZeroMagPower * Math.Pow(100, -vMag / 5);
-        // deg[]
-        var boxSize = new[] { StarDiameter / Math.Sin(dec / 180 * Math.PI), StarDiameter };
-        // deg[]
-        var centerLoc = new[] { ra, -dec + 90 };
-
-        // px[]
-        var boundBox = new[,]
         {
-          {
-            (int)Math.Floor((centerLoc[0] - boxSize[0] / 2) / PixelSize),
-            (int)Math.Ceiling((centerLoc[0] + boxSize[0] / 2) / PixelSize) - 1
-          },
-          {
-            (int)Math.Floor((centerLoc[1] - boxSize[1] / 2) / PixelSize),
-            (int)Math.Ceiling((centerLoc[1] + boxSize[1] / 2) / PixelSize) - 1
-          }
-        };
-        // http://www.uenosato.net/hr_diagram/hrdiagram2.html 2-a
-        var temperature = 9000d / (bvColor + 0.85);
-        // https://zwxadz.hateblo.jp/entry/2017/05/02/065537
-        var colorX = temperature <= 7000
-          ? -4.607 / Math.Pow(temperature, 3) * Math.Pow(10, 9) +
-            2.9678 / Math.Pow(temperature, 2) * Math.Pow(10, 6) + 0.09911 / temperature * Math.Pow(10, 3) + 0.244063
-          : -2.0064 / Math.Pow(temperature, 3) * Math.Pow(10, 9) + 1.9018 / Math.Pow(temperature, 2) * Math.Pow(10, 6) +
-            0.24748 / temperature * Math.Pow(10, 3) + 0.23704;
-
-        var colorY = -3d * Math.Pow(colorX, 2) + 2.87d * colorX - 0.275;
-        var colorZ = 1 - colorX - colorY;
-        // http://www.uenosato.net/hr_diagram/hrdiagram3.html 3
-        var colorRgbLiner = new[]
+          (int)Math.Floor((centerLoc[0] - boxSize[0] / 2) / PixelSize),
+          (int)Math.Ceiling((centerLoc[0] + boxSize[0] / 2) / PixelSize) - 1
+        },
         {
-          3.2410 * colorX + -1.5374 * colorY + -0.4986 * colorZ,
-          -0.9692 * colorX + 1.8760 * colorY + 0.0416 * colorZ,
-          0.0556 * colorX + -0.2040 * colorY + 1.0570 * colorZ
-        };
-        var colorRgb = colorRgbLiner.Select(val => Math.Pow(val, DisplayGamma)).ToArray();
-
-        void WritePixel(int x, int y, double weight)
-        {
-          imageData[x + ImageHeight * y] += lightPower * weight;
-          imageData[x + ImageHeight * y + 1] += colorRgb[0] * weight;
-          imageData[x + ImageHeight * y + 2] += colorRgb[1] * weight;
-          imageData[x + ImageHeight * y + 3] += colorRgb[2] * weight;
+          (int)Math.Floor((centerLoc[1] - boxSize[1] / 2) / PixelSize),
+          (int)Math.Ceiling((centerLoc[1] + boxSize[1] / 2) / PixelSize) - 1
         }
+      };
+      // http://www.uenosato.net/hr_diagram/hrdiagram2.html 2-a
+      var temperature = 9000d / (bvColor + 0.85);
+      // https://zwxadz.hateblo.jp/entry/2017/05/02/065537
+      var colorX = temperature <= 7000
+        ? -4.607 / Math.Pow(temperature, 3) * Math.Pow(10, 9) +
+          2.9678 / Math.Pow(temperature, 2) * Math.Pow(10, 6) + 0.09911 / temperature * Math.Pow(10, 3) + 0.244063
+        : -2.0064 / Math.Pow(temperature, 3) * Math.Pow(10, 9) + 1.9018 / Math.Pow(temperature, 2) * Math.Pow(10, 6) +
+          0.24748 / temperature * Math.Pow(10, 3) + 0.23704;
 
-        for (var x = boundBox[0, 0]; x < boundBox[0, 1]; x++)
+      var colorY = -3d * Math.Pow(colorX, 2) + 2.87d * colorX - 0.275;
+      var colorZ = 1 - colorX - colorY;
+      // http://www.uenosato.net/hr_diagram/hrdiagram3.html 3
+      var colorRgbLiner = new[]
+      {
+        3.2410 * colorX + -1.5374 * colorY + -0.4986 * colorZ,
+        -0.9692 * colorX + 1.8760 * colorY + 0.0416 * colorZ,
+        0.0556 * colorX + -0.2040 * colorY + 1.0570 * colorZ
+      };
+      var colorRgb = colorRgbLiner.Select(val => Math.Pow(val, DisplayGamma)).ToArray();
+
+      void WritePixel(int x, int y, double weight)
+      {
+        imageData[x + ImageHeight * y + 0] += colorRgb[0] * weight;
+        imageData[x + ImageHeight * y + 1] += colorRgb[1] * weight;
+        imageData[x + ImageHeight * y + 2] += colorRgb[2] * weight;
+      }
+
+      for (var x = boundBox[0, 0]; x < boundBox[0, 1]; x++)
+      {
+        for (var y = boundBox[1, 0]; y < boundBox[1, 1]; y++)
         {
-          for (var y = boundBox[1, 0]; y < boundBox[1, 1]; y++)
+          double weight;
+          if (x * PixelSize <= centerLoc[0] - boxSize[0] / 2 && centerLoc[0] + boxSize[0] / 2 <= (x + 1) * PixelSize)
           {
-            double weight;
-            if (x * PixelSize <= centerLoc[0] - boxSize[0] / 2 && centerLoc[0] + boxSize[0] / 2 <= (x + 1) * PixelSize)
+            if (y * PixelSize <= centerLoc[1] - boxSize[1] / 2 &&
+                centerLoc[1] + boxSize[1] / 2 <= (y + 1) * PixelSize)
             {
-              if (y * PixelSize <= centerLoc[1] - boxSize[1] / 2 &&
-                  centerLoc[1] + boxSize[1] / 2 <= (y + 1) * PixelSize)
-              {
-                weight = 1;
-              }
-              else if (centerLoc[1] + boxSize[1] / 2 <= (y + 1) * PixelSize)
-              {
-                var yRate = (centerLoc[1] + boxSize[1] / 2 - y * PixelSize) / boxSize[1];
-                weight = GetAreaRatio_0x1(yRate);
-              }
-              else if (y * PixelSize <= centerLoc[1] - boxSize[1] / 2)
-              {
-                var yRate = (y + 1 - (centerLoc[1] - boxSize[1] / 2)) / boxSize[1];
-                weight = GetAreaRatio_0x1(yRate);
-              }
-              else
-              {
-                var yMin = (y * PixelSize - (centerLoc[1] - boxSize[1] / 2)) / boxSize[1];
-                var yMax = 1 - (centerLoc[1] + boxSize[1] / 2 - (y + 1) * PixelSize) / boxSize[1];
-                weight = GetAreaRatio_0x2(yMin, yMax);
-              }
+              weight = 1;
             }
-            else if (x * PixelSize <= centerLoc[0] - boxSize[0] / 2)
+            else if (centerLoc[1] + boxSize[1] / 2 <= (y + 1) * PixelSize)
             {
-              var xRate = ((x + 1) * PixelSize - (centerLoc[0] - boxSize[0] / 2)) / boxSize[0];
-              if (y * PixelSize <= centerLoc[1] - boxSize[1] / 2 &&
-                  centerLoc[1] + boxSize[1] / 2 <= (y + 1) * PixelSize)
-              {
-                weight = GetAreaRatio_0x1(xRate);
-              }
-              else if (centerLoc[1] + boxSize[1] / 2 <= (y + 1) * PixelSize)
-              {
-                var yRate = (centerLoc[1] + boxSize[1] / 2 - y * PixelSize) / boxSize[1];
-                weight = GetAreaRatio_1x1(xRate, yRate);
-              }
-              else if (y * PixelSize <= centerLoc[1] - boxSize[1] / 2)
-              {
-                var yRate = (y + 1 - (centerLoc[1] - boxSize[1] / 2)) / boxSize[1];
-                weight = GetAreaRatio_1x1(xRate, yRate);
-              }
-              else
-              {
-                var yMin = (y * PixelSize - (centerLoc[1] - boxSize[1] / 2)) / boxSize[1];
-                var yMax = 1 - (centerLoc[1] + boxSize[1] / 2 - (y + 1) * PixelSize) / boxSize[1];
-                weight = GetAreaRatio_1x2(xRate, yMin, yMax);
-              }
+              var yRate = (centerLoc[1] + boxSize[1] / 2 - y * PixelSize) / boxSize[1];
+              weight = GetAreaRatio_0x1(yRate);
             }
-            else if (centerLoc[0] + boxSize[0] / 2 <= (x + 1) * PixelSize)
+            else if (y * PixelSize <= centerLoc[1] - boxSize[1] / 2)
             {
-              var xRate = (centerLoc[0] + boxSize[0] / 2 - x * PixelSize) / boxSize[0];
-              if (y * PixelSize <= centerLoc[1] - boxSize[1] / 2 &&
-                  centerLoc[1] + boxSize[1] / 2 <= (y + 1) * PixelSize)
-              {
-                weight = GetAreaRatio_0x1(xRate);
-              }
-              else if (centerLoc[1] + boxSize[1] / 2 <= (y + 1) * PixelSize)
-              {
-                var yRate = (centerLoc[1] + boxSize[1] / 2 - y * PixelSize) / boxSize[1];
-                weight = GetAreaRatio_1x1(xRate, yRate);
-              }
-              else if (y * PixelSize <= centerLoc[1] - boxSize[1] / 2)
-              {
-                var yRate = (y + 1 - (centerLoc[1] - boxSize[1] / 2)) / boxSize[1];
-                weight = GetAreaRatio_1x1(xRate, yRate);
-              }
-              else
-              {
-                var yMin = (y * PixelSize - (centerLoc[1] - boxSize[1] / 2)) / boxSize[1];
-                var yMax = 1 - (centerLoc[1] + boxSize[1] / 2 - (y + 1) * PixelSize) / boxSize[1];
-                weight = GetAreaRatio_1x2(xRate, yMin, yMax);
-              }
+              var yRate = (y + 1 - (centerLoc[1] - boxSize[1] / 2)) / boxSize[1];
+              weight = GetAreaRatio_0x1(yRate);
             }
             else
             {
-              var xMin = (x * PixelSize - (centerLoc[0] - boxSize[0] / 2)) / boxSize[0];
-              var xMax = 1 - (centerLoc[0] + boxSize[0] / 2 - (x + 1) * PixelSize) / boxSize[0];
-              if (y * PixelSize <= centerLoc[1] - boxSize[1] / 2 &&
-                  centerLoc[1] + boxSize[1] / 2 <= (y + 1) * PixelSize)
-              {
-                weight = GetAreaRatio_0x2(xMin, xMax);
-              }
-              else if (centerLoc[1] + boxSize[1] / 2 <= (y + 1) * PixelSize)
-              {
-                var yRate = (centerLoc[1] + boxSize[1] / 2 - y * PixelSize) / boxSize[1];
-                weight = GetAreaRatio_1x2(yRate, xMin, xMax);
-              }
-              else if (y * PixelSize <= centerLoc[1] - boxSize[1] / 2)
-              {
-                var yRate = (y + 1 - (centerLoc[1] - boxSize[1] / 2)) / boxSize[1];
-                weight = GetAreaRatio_1x2(yRate, xMin, xMax);
-              }
-              else
-              {
-                var yMin = (y * PixelSize - (centerLoc[1] - boxSize[1] / 2)) / boxSize[1];
-                var yMax = 1 - (centerLoc[1] + boxSize[1] / 2 - (y + 1) * PixelSize) / boxSize[1];
-                weight = GetAreaRatio_2x2(xMin, xMax, yMin, yMax);
-              }
+              var yMin = (y * PixelSize - (centerLoc[1] - boxSize[1] / 2)) / boxSize[1];
+              var yMax = 1 - (centerLoc[1] + boxSize[1] / 2 - (y + 1) * PixelSize) / boxSize[1];
+              weight = GetAreaRatio_0x2(yMin, yMax);
             }
-
-            WritePixel(x, y, weight);
           }
+          else if (x * PixelSize <= centerLoc[0] - boxSize[0] / 2)
+          {
+            var xRate = ((x + 1) * PixelSize - (centerLoc[0] - boxSize[0] / 2)) / boxSize[0];
+            if (y * PixelSize <= centerLoc[1] - boxSize[1] / 2 &&
+                centerLoc[1] + boxSize[1] / 2 <= (y + 1) * PixelSize)
+            {
+              weight = GetAreaRatio_0x1(xRate);
+            }
+            else if (centerLoc[1] + boxSize[1] / 2 <= (y + 1) * PixelSize)
+            {
+              var yRate = (centerLoc[1] + boxSize[1] / 2 - y * PixelSize) / boxSize[1];
+              weight = GetAreaRatio_1x1(xRate, yRate);
+            }
+            else if (y * PixelSize <= centerLoc[1] - boxSize[1] / 2)
+            {
+              var yRate = (y + 1 - (centerLoc[1] - boxSize[1] / 2)) / boxSize[1];
+              weight = GetAreaRatio_1x1(xRate, yRate);
+            }
+            else
+            {
+              var yMin = (y * PixelSize - (centerLoc[1] - boxSize[1] / 2)) / boxSize[1];
+              var yMax = 1 - (centerLoc[1] + boxSize[1] / 2 - (y + 1) * PixelSize) / boxSize[1];
+              weight = GetAreaRatio_1x2(xRate, yMin, yMax);
+            }
+          }
+          else if (centerLoc[0] + boxSize[0] / 2 <= (x + 1) * PixelSize)
+          {
+            var xRate = (centerLoc[0] + boxSize[0] / 2 - x * PixelSize) / boxSize[0];
+            if (y * PixelSize <= centerLoc[1] - boxSize[1] / 2 &&
+                centerLoc[1] + boxSize[1] / 2 <= (y + 1) * PixelSize)
+            {
+              weight = GetAreaRatio_0x1(xRate);
+            }
+            else if (centerLoc[1] + boxSize[1] / 2 <= (y + 1) * PixelSize)
+            {
+              var yRate = (centerLoc[1] + boxSize[1] / 2 - y * PixelSize) / boxSize[1];
+              weight = GetAreaRatio_1x1(xRate, yRate);
+            }
+            else if (y * PixelSize <= centerLoc[1] - boxSize[1] / 2)
+            {
+              var yRate = (y + 1 - (centerLoc[1] - boxSize[1] / 2)) / boxSize[1];
+              weight = GetAreaRatio_1x1(xRate, yRate);
+            }
+            else
+            {
+              var yMin = (y * PixelSize - (centerLoc[1] - boxSize[1] / 2)) / boxSize[1];
+              var yMax = 1 - (centerLoc[1] + boxSize[1] / 2 - (y + 1) * PixelSize) / boxSize[1];
+              weight = GetAreaRatio_1x2(xRate, yMin, yMax);
+            }
+          }
+          else
+          {
+            var xMin = (x * PixelSize - (centerLoc[0] - boxSize[0] / 2)) / boxSize[0];
+            var xMax = 1 - (centerLoc[0] + boxSize[0] / 2 - (x + 1) * PixelSize) / boxSize[0];
+            if (y * PixelSize <= centerLoc[1] - boxSize[1] / 2 &&
+                centerLoc[1] + boxSize[1] / 2 <= (y + 1) * PixelSize)
+            {
+              weight = GetAreaRatio_0x2(xMin, xMax);
+            }
+            else if (centerLoc[1] + boxSize[1] / 2 <= (y + 1) * PixelSize)
+            {
+              var yRate = (centerLoc[1] + boxSize[1] / 2 - y * PixelSize) / boxSize[1];
+              weight = GetAreaRatio_1x2(yRate, xMin, xMax);
+            }
+            else if (y * PixelSize <= centerLoc[1] - boxSize[1] / 2)
+            {
+              var yRate = (y + 1 - (centerLoc[1] - boxSize[1] / 2)) / boxSize[1];
+              weight = GetAreaRatio_1x2(yRate, xMin, xMax);
+            }
+            else
+            {
+              var yMin = (y * PixelSize - (centerLoc[1] - boxSize[1] / 2)) / boxSize[1];
+              var yMax = 1 - (centerLoc[1] + boxSize[1] / 2 - (y + 1) * PixelSize) / boxSize[1];
+              weight = GetAreaRatio_2x2(xMin, xMax, yMin, yMax);
+            }
+          }
+
+          WritePixel(x, y, weight);
         }
       }
     }
 
-    var img = new Bitmap(ImageHeight * 2, ImageHeight, PixelFormat.Format32bppArgb);
-    var bmpData = img.LockBits(
-      new Rectangle(0, 0, ImageHeight * 2, ImageHeight),
-      ImageLockMode.WriteOnly,
-      PixelFormat.Format32bppArgb
-    );
-    Marshal.Copy(imageData, 0, bmpData.Scan0, imageData.Length);
-    img.UnlockBits(bmpData);
-    img.Save(ImagePath, ImageFormat.Png);
+    using var outFStream = File.Open(OutFile, FileMode.OpenOrCreate);
+    outFStream.SetLength(0);
+    foreach (var t in imageData)
+    {
+      outFStream.Write(BitConverter.GetBytes(t), 0, 8);
+    }
+    logSWriter.WriteLine($"End: {DateTime.Now.ToString(new CultureInfo("ja-JP"))}");
   }
 
   // 1軸のみ
