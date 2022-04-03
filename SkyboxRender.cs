@@ -1,4 +1,10 @@
-﻿namespace SkyboxRender;
+﻿using System;
+using System.Windows;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.IO;
+
+namespace SkyboxRender;
 
 public class SkyboxRender
 {
@@ -16,7 +22,8 @@ public class SkyboxRender
 
   public static void Main()
   {
-    var imageData = new double[ImageHeight * 2, ImageHeight, 4];
+    // BGRA
+    var imageData = new double[ImageHeight * 2 * ImageHeight * 4];
 
     using (var dataStream = new BinaryReader(new FileStream(DataPath, FileMode.Open)))
     {
@@ -66,70 +73,130 @@ public class SkyboxRender
 
         void WritePixel(int x, int y, double weight)
         {
-          imageData[x, y, 0] += colorRgb[0];
-          imageData[x, y, 1] += colorRgb[1];
-          imageData[x, y, 2] += colorRgb[2];
-          imageData[x, y, 3] += lightPower;
-        }
-
-        if (boundBox[0, 0] == boundBox[0, 1])
-        {
-          var x = boundBox[0, 0];
-          if (boundBox[1, 0] == boundBox[1, 1])
-          {
-            var y = boundBox[1, 0];
-            WritePixel(x, y, 1);
-            continue;
-          }
-
-          for (var y = boundBox[1, 0]; y < boundBox[1, 1]; y++)
-          {
-            double[] nearest;
-            if (y + 1 < centerLoc[1] / PixelSize)
-            {
-              nearest = new[] { centerLoc[0], y + 1 };
-            }
-            else if (centerLoc[1] / PixelSize < y)
-            {
-              nearest = new[] { centerLoc[0], y };
-            }
-            else
-            {
-              nearest = centerLoc;
-            }
-
-            var distance =
-              Math.Sqrt(Math.Pow(centerLoc[0] - nearest[0], 2) + Math.Pow(centerLoc[0] - nearest[0], 2));
-            var weight = GetAreaRatio_0x2(,);
-            // ここまで
-            WritePixel(x, y, weight);
-          }
-
-          continue;
+          imageData[x * y + 2] += colorRgb[0] * weight;
+          imageData[x * y + 1] += colorRgb[1] * weight;
+          imageData[x * y + 0] += colorRgb[2] * weight;
+          imageData[x * y + 3] += lightPower * weight;
         }
 
         for (var x = boundBox[0, 0]; x < boundBox[0, 1]; x++)
         {
-          if (boundBox[1, 0] == boundBox[1, 1])
-          {
-            var y = boundBox[1, 0];
-            imageData[x, y, 0] += colorRgb[0];
-            imageData[x, y, 1] += colorRgb[1];
-            imageData[x, y, 2] += colorRgb[2];
-            imageData[x, y, 3] += lightPower;
-            continue;
-          }
-
           for (var y = boundBox[1, 0]; y < boundBox[1, 1]; y++)
           {
-            imageData[,] = new double[2] { };
+            double weight;
+            if (x * PixelSize <= centerLoc[0] - boxSize[0] / 2 && centerLoc[0] + boxSize[0] / 2 <= (x + 1) * PixelSize)
+            {
+              if (y * PixelSize <= centerLoc[1] - boxSize[1] / 2 &&
+                  centerLoc[1] + boxSize[1] / 2 <= (y + 1) * PixelSize)
+              {
+                weight = 1;
+              }
+              else if (centerLoc[1] + boxSize[1] / 2 <= (y + 1) * PixelSize)
+              {
+                var yRate = (centerLoc[1] + boxSize[1] / 2 - y * PixelSize) / boxSize[1];
+                weight = GetAreaRatio_0x1(yRate);
+              }
+              else if (y * PixelSize <= centerLoc[1] - boxSize[1] / 2)
+              {
+                var yRate = (y + 1 - (centerLoc[1] - boxSize[1] / 2)) / boxSize[1];
+                weight = GetAreaRatio_0x1(yRate);
+              }
+              else
+              {
+                var yMin = (y * PixelSize - (centerLoc[1] - boxSize[1] / 2)) / boxSize[1];
+                var yMax = 1 - (centerLoc[1] + boxSize[1] / 2 - (y + 1) * PixelSize) / boxSize[1];
+                weight = GetAreaRatio_0x2(yMin, yMax);
+              }
+            }
+            else if (x * PixelSize <= centerLoc[0] - boxSize[0] / 2)
+            {
+              var xRate = ((x + 1) * PixelSize - (centerLoc[0] - boxSize[0] / 2)) / boxSize[0];
+              if (y * PixelSize <= centerLoc[1] - boxSize[1] / 2 &&
+                  centerLoc[1] + boxSize[1] / 2 <= (y + 1) * PixelSize)
+              {
+                weight = GetAreaRatio_0x1(xRate);
+              }
+              else if (centerLoc[1] + boxSize[1] / 2 <= (y + 1) * PixelSize)
+              {
+                var yRate = (centerLoc[1] + boxSize[1] / 2 - y * PixelSize) / boxSize[1];
+                weight = GetAreaRatio_1x1(xRate, yRate);
+              }
+              else if (y * PixelSize <= centerLoc[1] - boxSize[1] / 2)
+              {
+                var yRate = (y + 1 - (centerLoc[1] - boxSize[1] / 2)) / boxSize[1];
+                weight = GetAreaRatio_1x1(xRate, yRate);
+              }
+              else
+              {
+                var yMin = (y * PixelSize - (centerLoc[1] - boxSize[1] / 2)) / boxSize[1];
+                var yMax = 1 - (centerLoc[1] + boxSize[1] / 2 - (y + 1) * PixelSize) / boxSize[1];
+                weight = GetAreaRatio_1x2(xRate, yMin, yMax);
+              }
+            }
+            else if (centerLoc[0] + boxSize[0] / 2 <= (x + 1) * PixelSize)
+            {
+              var xRate = (centerLoc[0] + boxSize[0] / 2 - x * PixelSize) / boxSize[0];
+              if (y * PixelSize <= centerLoc[1] - boxSize[1] / 2 &&
+                  centerLoc[1] + boxSize[1] / 2 <= (y + 1) * PixelSize)
+              {
+                weight = GetAreaRatio_0x1(xRate);
+              }
+              else if (centerLoc[1] + boxSize[1] / 2 <= (y + 1) * PixelSize)
+              {
+                var yRate = (centerLoc[1] + boxSize[1] / 2 - y * PixelSize) / boxSize[1];
+                weight = GetAreaRatio_1x1(xRate, yRate);
+              }
+              else if (y * PixelSize <= centerLoc[1] - boxSize[1] / 2)
+              {
+                var yRate = (y + 1 - (centerLoc[1] - boxSize[1] / 2)) / boxSize[1];
+                weight = GetAreaRatio_1x1(xRate, yRate);
+              }
+              else
+              {
+                var yMin = (y * PixelSize - (centerLoc[1] - boxSize[1] / 2)) / boxSize[1];
+                var yMax = 1 - (centerLoc[1] + boxSize[1] / 2 - (y + 1) * PixelSize) / boxSize[1];
+                weight = GetAreaRatio_1x2(xRate, yMin, yMax);
+              }
+            }
+            else
+            {
+              var xMin = (x * PixelSize - (centerLoc[0] - boxSize[0] / 2)) / boxSize[0];
+              var xMax = 1 - (centerLoc[0] + boxSize[0] / 2 - (x + 1) * PixelSize) / boxSize[0];
+              if (y * PixelSize <= centerLoc[1] - boxSize[1] / 2 &&
+                  centerLoc[1] + boxSize[1] / 2 <= (y + 1) * PixelSize)
+              {
+                weight = GetAreaRatio_0x2(xMin, xMax);
+              }
+              else if (centerLoc[1] + boxSize[1] / 2 <= (y + 1) * PixelSize)
+              {
+                var yRate = (centerLoc[1] + boxSize[1] / 2 - y * PixelSize) / boxSize[1];
+                weight = GetAreaRatio_1x2(yRate, xMin, xMax);
+              }
+              else if (y * PixelSize <= centerLoc[1] - boxSize[1] / 2)
+              {
+                var yRate = (y + 1 - (centerLoc[1] - boxSize[1] / 2)) / boxSize[1];
+                weight = GetAreaRatio_1x2(yRate, xMin, xMax);
+              }
+              else
+              {
+                var yMin = (y * PixelSize - (centerLoc[1] - boxSize[1] / 2)) / boxSize[1];
+                var yMax = 1 - (centerLoc[1] + boxSize[1] / 2 - (y + 1) * PixelSize) / boxSize[1];
+                weight = GetAreaRatio_2x2(xMin, xMax, yMin, yMax);
+              }
+            }
+
+            WritePixel(x, y, weight);
           }
         }
       }
     }
 
+    BitmapSource bitmap = BitmapSource.Create(ImageHeight * 2, ImageHeight, 96, 96, PixelFormats.Pbgra32, null, imageData, 0);
     using (var imageStream = new BinaryWriter(new FileStream(ImagePath, FileMode.OpenOrCreate)))
     {
+      PngBitmapEncoder encoder = new PngBitmapEncoder();
+      encoder.Frames.Add(BitmapFrame.Create(bitmap));
+      encoder.Save(imageStream);
     }
   }
 
@@ -140,10 +207,8 @@ public class SkyboxRender
   }
 
   // 1軸(2本)
-  private static double GetAreaRatio_0x2(double a, double b)
+  private static double GetAreaRatio_0x2(double min, double max)
   {
-    var max = Math.Max(a, b);
-    var min = Math.Min(a, b);
     return 1 - GetAreaRatio_0x1(min) - GetAreaRatio_0x1(1 - max);
   }
 
@@ -177,10 +242,15 @@ public class SkyboxRender
   }
 
   // 2軸(1+2本)
-  private static double GetAreaRatio_1x2(int xa, int xb, int y)
+  private static double GetAreaRatio_1x2(double x, double yMin, double yMax)
   {
-    var xMax = Math.Max(xa, xb);
-    var xMin = Math.Min(xa, xb);
-    return GetAreaRatio_0x1(y) - GetAreaRatio_1x1(xMin, y) - GetAreaRatio_1x1(1 - xMax, y);
+    return GetAreaRatio_0x1(x) - GetAreaRatio_1x1(yMin, x) - GetAreaRatio_1x1(1 - yMax, x);
+  }
+
+  // 2軸(2+2本)
+  private static double GetAreaRatio_2x2(double xMin, double xMax, double yMin, double yMax)
+  {
+    return 1 - GetAreaRatio_0x1(xMin) - GetAreaRatio_0x1(1 - xMax) - GetAreaRatio_1x2(yMin, xMin, xMax) -
+           GetAreaRatio_1x2(1 - yMax, xMin, xMax);
   }
 }
