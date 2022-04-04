@@ -8,9 +8,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="7ee5e8de-d1a4-4c6e-94d9-38f3c0fc45ee" name="Changes" comment="出力調整">
+    <list default="true" id="7ee5e8de-d1a4-4c6e-94d9-38f3c0fc45ee" name="Changes" comment="forの範囲指定ミス">
       <change beforePath="$PROJECT_DIR$/.idea/.idea.SkyboxRender/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.SkyboxRender/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/SkyboxRender/SkyboxRender.cs" beforeDir="false" afterPath="$PROJECT_DIR$/SkyboxRender/SkyboxRender.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ConvertToImage/ConvertToImage.cs" beforeDir="false" afterPath="$PROJECT_DIR$/ConvertToImage/ConvertToImage.cs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -22,6 +22,7 @@
     <option name="UPDATE_TYPE" value="REBASE" />
   </component>
   <component name="HighlightingSettingsPerFile">
+    <setting file="mock://C:/Users/ZOI/Desktop/Document/C#/VR_Star/SkyboxRender/SkyboxRender/SkyboxRender.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="mock://C:/Users/ZOI/Desktop/Document/C#/VR_Star/SkyboxRender/ConvertToImage/ConvertToImage.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="mock://C:/Users/ZOI/Desktop/Document/C#/VR_Star/SkyboxRender/SkyboxRender.cs" root0="SKIP_HIGHLIGHTING" />
     <setting file="mock://C:/Users/ZOI/Desktop/Document/C#/VR_Star/SkyboxRender/SkyboxRender.cs" root0="SKIP_HIGHLIGHTING" />
@@ -52,7 +53,7 @@
   <component name="RiderProblemsViewState">
     <option name="contextShortcutLearned" value="true" />
   </component>
-  <component name="RunManager" selected=".NET Project.SkyboxRender">
+  <component name="RunManager" selected=".NET Project.ConvertToImage">
     <configuration name="ConvertToImage" type="DotNetProject" factoryName=".NET Project">
       <option name="EXE_PATH" value="" />
       <option name="PROGRAM_PARAMETERS" value="" />
@@ -103,7 +104,7 @@
       <option name="presentableId" value="Default" />
       <updated>1648971177627</updated>
       <workItem from="1648971182623" duration="474000" />
-      <workItem from="1648971765070" duration="8307000" />
+      <workItem from="1648971765070" duration="12400000" />
     </task>
     <task id="LOCAL-00001" summary="import package">
       <created>1648972833674</created>
@@ -133,7 +134,14 @@
       <option name="project" value="LOCAL" />
       <updated>1649032915982</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="forの範囲指定ミス">
+      <created>1649033453877</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1649033453877</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -159,6 +167,7 @@
     <MESSAGE value="インデックスがint型なので分割が必要" />
     <MESSAGE value="ミス修正 実行" />
     <MESSAGE value="出力調整" />
-    <option name="LAST_COMMIT_MESSAGE" value="出力調整" />
+    <MESSAGE value="forの範囲指定ミス" />
+    <option name="LAST_COMMIT_MESSAGE" value="forの範囲指定ミス" />
   </component>
 </project>

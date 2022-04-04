@@ -10,7 +10,7 @@ public class ConvertToImage
   private const int ImageHeight = 4096;
   private const string DataPath = @"F:\out\out.bin";
   private const string OutFile = @"F:\out\out.png";
-  private const double Offset = 0.002;
+  private const double Offset = 0.5;
 
   public static void Main()
   {
@@ -18,7 +18,7 @@ public class ConvertToImage
     using var logSWriter =
       new StreamWriter(
         Path.GetDirectoryName(OutFile)
-        + @"\log_convert_"
+        + @"\log\log_convert_"
         + nowTime.ToString($"{nowTime:yyyyMMddHHmmss}")
         + ".txt");
     logSWriter.WriteLine($"Begin: {DateTime.Now.ToString(new CultureInfo("ja-JP"))}");
@@ -54,9 +54,10 @@ public class ConvertToImage
       imageData[count * 4 + 1] = RoundToByte(weight != 0 ? r / weight : 0);
       imageData[count * 4 + 2] = RoundToByte(weight != 0 ? g / weight : 0);
       imageData[count * 4 + 3] = RoundToByte(weight != 0 ? b / weight : 0);
-      imageData[count * 4 + 0] = RoundToByte(1 - Math.Min(weight, 1));
+      imageData[count * 4 + 0] = RoundToByte(Math.Max(1 - weight, 0));
       count++;
     }
+    Console.WriteLine(count);
 
     Bitmap bmp = new Bitmap(ImageHeight * 2, ImageHeight);
 
