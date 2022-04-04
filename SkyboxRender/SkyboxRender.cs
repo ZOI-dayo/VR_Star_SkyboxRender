@@ -85,9 +85,9 @@ public class SkyboxRender
         imageData[x + ImageHeight * y + 2] += colorRgb[2] * weight;
       }
 
-      for (var x = boundBox[0, 0]; x < boundBox[0, 1]; x++)
+      for (var x = boundBox[0, 0]; x <= boundBox[0, 1]; x++)
       {
-        for (var y = boundBox[1, 0]; y < boundBox[1, 1]; y++)
+        for (var y = boundBox[1, 0]; y <= boundBox[1, 1]; y++)
         {
           double weight;
           if (x * PixelSize <= centerLoc[0] - boxSize[0] / 2 && centerLoc[0] + boxSize[0] / 2 <= (x + 1) * PixelSize)
